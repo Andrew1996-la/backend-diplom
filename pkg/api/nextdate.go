@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -21,8 +22,11 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 
 	switch {
 	case repeat == "y":
-		for !date.After(now) {
+		for {
 			date = date.AddDate(1, 0, 0)
+			if date.After(now) {
+				break
+			}
 		}
 
 	case strings.HasPrefix(repeat, "d "):
@@ -40,8 +44,11 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			return "", fmt.Errorf("interval must be between 1 and 400")
 		}
 
-		for !date.After(now) {
+		for {
 			date = date.AddDate(0, 0, interval)
+			if date.After(now) {
+				break
+			}
 		}
 
 	default:
@@ -49,4 +56,32 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	}
 
 	return date.Format(dateFormat), nil
+}
+
+func nextDateHandler(w http.ResponseWriter, r *http.Request) {
+	nowStr := r.FormValue("now")
+	if nowStr == "" {
+		nowStr = time.Now().Format(dateFormat)
+	}
+
+	now, err := time.Parse(dateFormat, nowStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	date := r.FormValue("date")
+	repeat := r.FormValue("repeat")
+
+	newDate, err := NextDate(now, date, repeat)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, err = w.Write([]byte(newDate))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

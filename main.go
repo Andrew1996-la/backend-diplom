@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/Andrew1996-la/backend-diplom/pkg/api"
 	"github.com/Andrew1996-la/backend-diplom/pkg/db"
 )
 
@@ -17,7 +18,9 @@ func main() {
 	if port == "" {
 		port = "7540"
 	}
-	
+
+	api.Init()
+
 	webDir := "web"
 
 	if err := db.Init(dbPath); err != nil {
