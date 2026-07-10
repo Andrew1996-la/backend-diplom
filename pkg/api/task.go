@@ -87,6 +87,8 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
 		addTaskHandler(w, r)
+	case http.MethodGet:
+		getTaskHandler(w, r)
 	default:
 		writeJson(w, errorResponse{Error: "method not allowed"})
 	}

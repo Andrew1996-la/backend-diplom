@@ -1,6 +1,11 @@
 package db
 
-import "time"
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"time"
+)
 
 type Task struct {
 	ID      string `json:"id"`
@@ -101,4 +106,30 @@ func Tasks(limit int, search string) ([]*Task, error) {
 	}
 
 	return tasks, nil
+}
+
+func GetTask(id string) (*Task, error) {
+	var task Task
+
+	err := DB.QueryRow(
+		`
+		SELECT id, date, title, comment, repeat
+		FROM scheduler
+		WHERE id = ?`,
+		id).Scan(
+		&task.ID,
+		&task.Date,
+		&task.Title,
+		&task.Comment,
+		&task.Repeat,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("Задача не найдена")
+		}
+		return nil, err
+	}
+
+	return &task, nil
 }
