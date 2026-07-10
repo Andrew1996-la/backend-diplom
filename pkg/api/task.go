@@ -83,12 +83,54 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
+	var task db.Task
+
+	err := json.NewDecoder(r.Body).Decode(&task)
+	if err != nil {
+		writeJson(w, errorResponse{Error: err.Error()})
+		return
+	}
+
+	if task.ID == "" {
+		writeJson(w, errorResponse{
+			Error: "Не указан идентификатор",
+		})
+		return
+	}
+
+	if task.Title == "" {
+		writeJson(w, errorResponse{
+			Error: "Не указан заголовок задачи",
+		})
+		return
+	}
+
+	if err := checkDate(&task); err != nil {
+		writeJson(w, errorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	if err := db.UpdateTask(&task); err != nil {
+		writeJson(w, errorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	writeJson(w, map[string]any{})
+}
+
 func taskHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
 		addTaskHandler(w, r)
 	case http.MethodGet:
 		getTaskHandler(w, r)
+	case http.MethodPut:
+		updateTaskHandler(w, r)
 	default:
 		writeJson(w, errorResponse{Error: "method not allowed"})
 	}
