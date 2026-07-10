@@ -11,9 +11,13 @@ type tasksResponse struct {
 }
 
 func tasksHandler(w http.ResponseWriter, r *http.Request) {
-	tasks, err := db.Tasks(50)
+	search := r.FormValue("search")
+
+	tasks, err := db.Tasks(50, search)
 	if err != nil {
-		writeJson(w, errorResponse{Error: err.Error()})
+		writeJson(w, errorResponse{
+			Error: err.Error(),
+		})
 		return
 	}
 

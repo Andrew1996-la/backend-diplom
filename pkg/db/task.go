@@ -1,5 +1,7 @@
 package db
 
+import "time"
+
 type Task struct {
 	ID      string `json:"id"`
 	Date    string `json:"date"`
@@ -27,17 +29,52 @@ func AddTask(task *Task) (int64, error) {
 	return id, nil
 }
 
-func Tasks(limit int) ([]*Task, error) {
+func Tasks(limit int, search string) ([]*Task, error) {
 	tasks := make([]*Task, 0)
 
-	query := `
-		SELECT id, date, title, comment, repeat
-		FROM scheduler
-		ORDER BY date ASC
-		LIMIT ?
-	`
+	var (
+		query string
+		args  []any
+	)
 
-	rows, err := DB.Query(query, limit)
+	switch {
+	case search == "":
+		query = `
+			SELECT id, date, title, comment, repeat
+			FROM scheduler
+			ORDER BY date ASC
+			LIMIT ?
+		`
+		args = append(args, limit)
+
+	default:
+		searchDate, err := time.Parse("02.01.2006", search)
+
+		if err == nil {
+			query = `
+				SELECT id, date, title, comment, repeat
+				FROM scheduler
+				WHERE date = ?
+				ORDER BY date ASC
+				LIMIT ?
+			`
+
+			args = append(args, searchDate.Format("20060102"), limit)
+		} else {
+			query = `
+				SELECT id, date, title, comment, repeat
+				FROM scheduler
+				WHERE title LIKE ? OR comment LIKE ?
+				ORDER BY date ASC
+				LIMIT ?
+			`
+
+			pattern := "%" + search + "%"
+			args = append(args, pattern, pattern, limit)
+		}
+	}
+
+	rows, err := DB.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +95,7 @@ func Tasks(limit int) ([]*Task, error) {
 
 		tasks = append(tasks, &task)
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
