@@ -144,6 +144,53 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 	writeJson(w, map[string]any{})
 }
 
+func taskDoneHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.FormValue("id")
+	if id == "" {
+		writeJson(w, errorResponse{
+			Error: "Не указан идентификатор",
+		})
+		return
+	}
+
+	task, err := db.GetTask(id)
+	if err != nil {
+		writeJson(w, errorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	if task.Repeat == "" {
+		if err := db.DeleteTask(id); err != nil {
+			writeJson(w, errorResponse{
+				Error: err.Error(),
+			})
+			return
+		}
+
+		writeJson(w, map[string]any{})
+		return
+	}
+
+	next, err := NextDate(time.Now(), task.Date, task.Repeat)
+	if err != nil {
+		writeJson(w, errorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	if err := db.UpdateDate(next, id); err != nil {
+		writeJson(w, errorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	writeJson(w, map[string]any{})
+}
+
 func taskHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:

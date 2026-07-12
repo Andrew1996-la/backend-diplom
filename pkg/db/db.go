@@ -9,6 +9,7 @@ import (
 )
 
 var DB *sql.DB
+
 const schema = `
 	CREATE TABLE IF NOT EXISTS scheduler (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
