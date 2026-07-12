@@ -123,6 +123,27 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	writeJson(w, map[string]any{})
 }
 
+func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.FormValue("id")
+
+	if id == "" {
+		writeJson(w, errorResponse{
+			Error: "Не указан идентификатор",
+		})
+		return
+	}
+
+	err := db.DeleteTask(id)
+	if err != nil {
+		writeJson(w, errorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	writeJson(w, map[string]any{})
+}
+
 func taskHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
@@ -131,6 +152,8 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 		getTaskHandler(w, r)
 	case http.MethodPut:
 		updateTaskHandler(w, r)
+	case http.MethodDelete:
+		deleteTaskHandler(w, r)
 	default:
 		writeJson(w, errorResponse{Error: "method not allowed"})
 	}
